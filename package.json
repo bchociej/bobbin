@@ -1,6 +1,6 @@
 {
   "name": "bobbin",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "easily spool up \"threads\" with bobbin",
   "main": "index.js",
   "scripts": {
