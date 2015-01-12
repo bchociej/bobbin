@@ -1,0 +1,35 @@
+{
+  "name": "bobbin",
+  "version": "0.0.1",
+  "description": "easily spool up \"threads\" with bobbin",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/.bin/mocha",
+    "watch-test": "node_modules/.bin/mocha -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bchociej/bobbin.git"
+  },
+  "keywords": [
+    "threads",
+    "parallel",
+    "cluster",
+    "SMP",
+    "multiprocess"
+  ],
+  "author": "Ben Chociej <ben@chociej.io>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bchociej/bobbin/issues"
+  },
+  "homepage": "https://github.com/bchociej/bobbin",
+  "dependencies": {
+    "coffee-script": "^1.8.0",
+    "node-uuid": "^1.4.2"
+  },
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "mocha": "^2.1.0"
+  }
+}
