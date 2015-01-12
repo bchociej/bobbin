@@ -2,18 +2,26 @@ boxed_eval = (s) ->
 	eval "var retval = #{s}"
 	retval
 
-cluster = require 'cluster'
+builtin_process = process
 
-unless cluster.isWorker
-	throw new Error 'needs to be cluster worker'
+run = (process = builtin_process) ->
+	cluster = require 'cluster'
 
-process.on 'message', (msg) ->
-	work_fn = boxed_eval msg.work
+	unless cluster.isWorker
+		throw new Error 'needs to be cluster worker'
 
-	unless typeof work_fn is 'function'
-		throw new TypeError 'work_fn not a function'
+	process.on 'message', (msg) ->
+		work_fn = boxed_eval msg.work
 
-	work_fn msg.data..., (err, result) ->
-		process.send
-			id: msg.id
-			callback_params: [null, result]
+		unless typeof work_fn is 'function'
+			throw new TypeError 'work_fn not a function'
+
+		work_fn msg.data..., (err, result) ->
+			process.send
+				id: msg.id
+				callback_params: [null, result]
+
+if require.main is module
+	run()
+else
+	module.exports = run
