@@ -1,11 +1,11 @@
 {
   "name": "bobbin",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "easily spool up \"threads\" with bobbin",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha",
-    "watch-test": "node_modules/.bin/mocha -w"
+    "test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register",
+    "watch-test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register -w"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,8 @@
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "mocha": "^2.1.0"
+    "mocha": "^2.1.0",
+    "mockery": "^1.4.0",
+    "sinon": "^1.12.2"
   }
 }
