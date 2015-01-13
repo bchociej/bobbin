@@ -5,7 +5,7 @@ easily spool up node "threads" with bobbin
 // to create a pool of workers:
 
 var bobbin = require('bobbin');
-var pool = bobbin.create(4); // 4 processes; defaults to num_cpus
+var pool = bobbin.create(4); // 4 processes; defaults to os.cpus().length
 
 
 // to send some work, in this case concatenate two strings:
