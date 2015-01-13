@@ -1,7 +1,7 @@
 {
   "name": "bobbin",
-  "version": "0.0.0",
-  "description": "easily spool up \"threads\" with bobbin",
+  "version": "0.1.0",
+  "description": "easily spool up thread-like worker processes",
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register",

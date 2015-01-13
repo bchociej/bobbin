@@ -35,7 +35,7 @@ describe 'bobbin', ->
 			
 			cluster_mock.isMaster = true
 
-		it 'should create num_cpus processes', (done) ->
+		it 'should create num_cpus processes by default', (done) ->
 			handlers = {}
 			id = undefined
 
@@ -49,6 +49,117 @@ describe 'bobbin', ->
 				on: pass
 
 			bobbin.create()
+
+			# to cleanly end the test
+			did = false
+
+			cluster_mock.fork = ->
+				unless did
+					expect(i).to.eql num_cpus
+					done()
+					did = true
+
+				send: pass
+				on: pass
+
+			bobbin.create()
+
+		it 'should create N processes for N >= 1', (done) ->
+			handlers = {}
+			id = undefined
+
+			i = 0
+
+			cluster_mock.fork = ->
+				if ++i > 10
+					expect.fail 'bobbin created more processes than cpus'
+
+				send: pass
+				on: pass
+
+			bobbin.create(10)
+
+			# to cleanly end the test
+			did = false
+
+			cluster_mock.fork = ->
+				unless did
+					expect(i).to.eql 10
+					did = true
+
+				send: pass
+				on: pass
+
+			bobbin.create(1)
+
+			i = 0
+
+			cluster_mock.fork = ->
+				if ++i > 2
+					expect.fail 'bobbin created more processes than cpus'
+
+				send: pass
+				on: pass
+
+			bobbin.create(2)
+
+			# to cleanly end the test
+			did = false
+
+			cluster_mock.fork = ->
+				unless did
+					expect(i).to.eql 2
+					done()
+					did = true
+
+				send: pass
+				on: pass
+
+			bobbin.create(1)
+
+		it 'should create num_cpus processes when N < 1', (done) ->
+			handlers = {}
+			id = undefined
+
+			i = 0
+
+			cluster_mock.fork = ->
+				if ++i > num_cpus
+					expect.fail 'bobbin created more processes than cpus'
+
+				send: pass
+				on: pass
+
+			bobbin.create(0.9)
+
+			# to cleanly end the test
+			did = false
+
+			cluster_mock.fork = ->
+				unless did
+					expect(i).to.eql num_cpus
+					done()
+					did = true
+
+				send: pass
+				on: pass
+
+			bobbin.create()
+
+		it 'should create num_cpus processes when N invalid', (done) ->
+			handlers = {}
+			id = undefined
+
+			i = 0
+
+			cluster_mock.fork = ->
+				if ++i > num_cpus
+					expect.fail 'bobbin created more processes than cpus'
+
+				send: pass
+				on: pass
+
+			bobbin.create('pickles')
 
 			# to cleanly end the test
 			did = false

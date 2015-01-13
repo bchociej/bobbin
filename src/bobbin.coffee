@@ -4,16 +4,19 @@ uuid = require 'node-uuid'
 num_cpus = require('os').cpus().length
 
 module.exports =
-	create: (opts) ->
+	create: (num_workers) ->
 		workers = []
 		handlers = {}
 
 		unless cluster.isMaster is true
 			throw new Error 'needs to be cluster master'
 
-		for i in [1..num_cpus]
-			cluster.setupMaster exec: path.join(__dirname, 'worker.coffee')
+		unless typeof num_workers is 'number' and num_workers >= 1
+			num_workers = num_cpus
 
+		cluster.setupMaster exec: path.join(__dirname, 'worker.coffee')
+
+		for i in [1..num_workers]
 			w = cluster.fork()
 			workers.push w
 
