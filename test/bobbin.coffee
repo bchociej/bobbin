@@ -28,6 +28,7 @@ describe 'bobbin', ->
 		bobbin = require '../src/bobbin.coffee'
 
 	describe '.create()', ->
+
 		it 'should fail if not cluster.isMaster', ->
 			cluster_mock.isMaster = false
 
@@ -179,7 +180,9 @@ describe 'bobbin', ->
 			expect(bobbin.create()).to.be.an 'object'
 
 		describe '[worker pool]', ->
+
 			describe '.run()', ->
+			
 				it 'should be a function', ->
 					pool = bobbin.create()
 					expect(pool.run).to.be.a 'function'
