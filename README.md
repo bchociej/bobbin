@@ -1,28 +1,32 @@
 # bobbin
 easily spool up node "threads" with bobbin
 
-	// to create a pool of workers:
+```javascript
+// to create a pool of workers:
 
-    var bobbin = require('bobbin');
-    var pool = bobbin.create(4); // 4 processes; defaults to num_cpus
+var bobbin = require('bobbin');
+var pool = bobbin.create(4); // 4 processes; defaults to num_cpus
 
 
-    // to send some work, in this case concatenate two strings:
+// to send some work, in this case concatenate two strings:
 
-    var left = 'foo', right = 'bar';
-    pool.run(
-    	left, right, // you have to explicitly pass variables
-    	function remoteWorkFunction(left, right, callback) {
-	    	callback(left + right);
-	    },
-	    function localCallback(result) {
-	    	assert(result === 'foobar');
-	    }
-	);
+var left = 'foo', right = 'bar';
+pool.run(
+	left, right, // you have to explicitly pass variables
+	function remoteWorkFunction(left, right, callback) {
+    	callback(left + right);
+    },
+    function localCallback(result) {
+    	assert(result === 'foobar');
+    }
+);
+```
 
 for clarity, the signature of `pool.run` is:
 
-    pool.run(varsToSend..., workFunction, localCallback)
+```javascript
+pool.run(varsToSend..., workFunction, localCallback)
+```
 
 stuff to keep in mind:
 
