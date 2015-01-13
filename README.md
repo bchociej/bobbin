@@ -1,7 +1,7 @@
 # bobbin
 easily spool up thread-like worker processes in node with bobbin
 
-[![NPM](https://nodei.co/npm/bobbin.png?compact=true)](https://www.npmjs.com/package/bobbin)
+[![NPM](https://nodei.co/npm/bobbin.png?compact=true)](https://nodei.co/npm/bobbin/)
 
 ```javascript
 // to create a pool of workers:
