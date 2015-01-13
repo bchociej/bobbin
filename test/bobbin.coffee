@@ -71,7 +71,6 @@ describe 'bobbin', ->
 			describe '.run()', ->
 				it 'should be a function', ->
 					pool = bobbin.create()
-
 					expect(pool.run).to.be.a 'function'
 
 				it 'should fail unless work param is a function', ->

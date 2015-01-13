@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register",
-    "watch-test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register -w"
+    "watch-test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register -w",
+    "lint": "node_modules/.bin/coffeelint src/ test/"
   },
+  "pre-commit": ["test", "lint"],
   "repository": {
     "type": "git",
     "url": "https://github.com/bchociej/bobbin.git"
@@ -29,9 +31,11 @@
     "node-uuid": "^1.4.2"
   },
   "devDependencies": {
+    "coffeelint": "^1.8.1",
     "expect.js": "^0.3.1",
     "mocha": "^2.1.0",
     "mockery": "^1.4.0",
+    "pre-commit": "0.0.9",
     "sinon": "^1.12.2"
   }
 }

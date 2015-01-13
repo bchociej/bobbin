@@ -58,7 +58,7 @@ describe 'worker', ->
 			work: reflex
 		}
 
-	it 'should apply the data to the work function correctly', (done) ->
+	it 'should pass data in/out of work function correctly', (done) ->
 		id = 'foo'
 
 		data = ['foo', 'bar', {quux: {a: 1, b: null, c: false, d: true}}]
