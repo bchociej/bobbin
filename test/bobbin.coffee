@@ -4,6 +4,7 @@ expect = require 'expect.js'
 uuid = require 'node-uuid'
 path = require 'path'
 fs = require 'fs'
+num_cpus = require('os').cpus().length
 
 pass = -> undefined
 
@@ -34,6 +35,35 @@ describe 'bobbin', ->
 			
 			cluster_mock.isMaster = true
 
+		it 'should create num_cpus processes', (done) ->
+			handlers = {}
+			id = undefined
+
+			i = 0
+
+			cluster_mock.fork = ->
+				if ++i > num_cpus
+					expect.fail 'bobbin created more processes than cpus'
+
+				send: pass
+				on: pass
+
+			bobbin.create()
+
+			# to cleanly end the test
+			did = false
+
+			cluster_mock.fork = ->
+				unless did
+					expect(i).to.eql num_cpus
+					done()
+					did = true
+
+				send: pass
+				on: pass
+
+			bobbin.create()
+
 		it 'should return a pool object', ->
 			expect(bobbin.create()).to.be.an 'object'
 
@@ -41,7 +71,6 @@ describe 'bobbin', ->
 			describe '.run()', ->
 				it 'should be a function', ->
 					pool = bobbin.create()
-
 					expect(pool.run).to.be.a 'function'
 
 				it 'should fail unless work param is a function', ->
