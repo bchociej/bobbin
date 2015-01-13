@@ -1,6 +1,8 @@
 boxed_eval = (s) ->
+	### jshint ignore:start ###
 	eval "var retval = #{s}"
 	retval
+	### jshint ignore:end ###
 
 builtin_process = process
 

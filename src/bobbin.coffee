@@ -16,12 +16,13 @@ module.exports =
 
 		cluster.setupMaster exec: path.join(__dirname, 'worker.coffee')
 
+		worker_msg_handler = (msg) -> handlers[msg.id] msg.callback_params...
+
 		for i in [1..num_workers]
 			w = cluster.fork()
 			workers.push w
 
-			w.on 'message', (msg) ->
-				handlers[msg.id] msg.callback_params...
+			w.on 'message', worker_msg_handler
 
 		get_worker = do ->
 			i = 0
