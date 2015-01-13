@@ -1,5 +1,5 @@
 # bobbin
-easily spool up thread-like workers in node with bobbin
+easily spool up thread-like worker processes in node with bobbin
 
 ```javascript
 // to create a pool of workers:
