@@ -1,2 +1,2 @@
 require('coffee-script').register();
-require('./src/bobbin.coffee');
+module.exports = require('./src/bobbin.coffee');
