@@ -7,6 +7,10 @@ fs = require 'fs'
 num_cpus = require('os').cpus().length
 
 pass = -> undefined
+reflex = (cb) -> cb()
+slow_reflex = (cb) -> setTimeout cb, 10
+
+describe 'tests', -> it 'should consider mocking worker instead of cluster.fork, where appropriate'
 
 describe 'bobbin', ->
 
@@ -176,16 +180,15 @@ describe 'bobbin', ->
 
 			bobbin.create()
 
-		it 'should return a pool object', ->
-			expect(bobbin.create()).to.be.an 'object'
+		it 'should return a pool object (run, kill)', ->
+			pool = bobbin.create()
+			expect(pool).to.be.an 'object'
+			expect(pool.run).to.be.a 'function'
+			expect(pool.kill).to.be.a 'function'
 
 		describe '[worker pool]', ->
 
 			describe '.run()', ->
-			
-				it 'should be a function', ->
-					pool = bobbin.create()
-					expect(pool.run).to.be.a 'function'
 
 				it 'should fail unless work param is a function', ->
 					pool = bobbin.create()
@@ -227,7 +230,7 @@ describe 'bobbin', ->
 
 					bobbin.create().run pass, done
 
-					handlers['message'] {id: id}
+					handlers['message'] {type: 'result', contents: {id: id}}
 
 				it 'should callback with the parameters returned from the worker', (done) ->
 					handlers = {}
@@ -245,9 +248,125 @@ describe 'bobbin', ->
 						done()
 
 					handlers['message'] {
-						id: id
-						callback_params: params
+						type: 'result'
+						contents: {
+							id: id
+							callback_params: params
+						}
 					}
+
+				it 'should prefer idle workers'
+				# might need to mock worker for this
+
+
+			describe '.kill()', ->
+
+				it 'should kill all workers immediately when called with no timeout', ->
+					spy = sinon.spy()
+
+					cluster_mock.fork = ->
+						killed = false
+
+						send: pass
+						on: pass
+						kill: ->
+							unless killed
+								killed = true
+								spy()
+
+
+					pool = bobbin.create(10)
+					pool.kill()
+
+					expect(spy.callCount).to.eql 10
+
+				it 'should kill workers after work finishes if called with sufficient timeout', (done) ->
+					work_done_count = 0
+					killed_count = 0
+					handlers = {}
+
+					inc = ->
+						if ++killed_count is 10
+							expect(work_done_count).to.eql 20
+
+					cluster_mock.fork = ->
+						killed = false
+
+						send: (msg) ->
+							setTimeout (->
+								handlers['message'] {
+									type: 'result'
+									contents:
+										id: msg.id
+										callback_params: []
+								}
+							), 10
+						on: (ev, handler) ->
+							handlers[ev] = handler
+						kill: ->
+							unless killed
+								killed = true
+								inc()
+
+					pool = bobbin.create(10)
+					
+					inc_done = ->
+						if ++work_done_count >= 20
+							done()
+
+					pool.run((-> 'dummy function -- this test ignores this function'), inc_done) for i in [1..20]
+					
+					pool.kill(1500)
+
+				it 'should kill workers prematurely if called with small timeout', (done) ->
+					work_done_count = 0
+					killed_count = 0
+					handlers = {}
+
+					inc = ->
+						if ++killed_count is 10
+							expect(work_done_count).to.eql 0
+							done()
+
+					cluster_mock.fork = ->
+						killed = false
+
+						send: (msg) ->
+							setTimeout (->
+								handlers['message'] {
+									type: 'result'
+									contents:
+										id: msg.id
+										callback_params: []
+								}
+							), 1000
+						on: (ev, handler) ->
+							handlers[ev] = handler
+						kill: ->
+							unless killed
+								killed = true
+								inc()
+
+					pool = bobbin.create(10)
+					
+					inc_done = ->
+						if ++work_done_count >= 1
+							expect().fail('should not have run inc_done')
+
+					pool.run((-> 'dummy function -- this test ignores this function'), inc_done) for i in [1..20]
+					
+					pool.kill(1)
+
+				it 'should raise an error if new work is submitted after kill()', ->
+					pool = bobbin.create()
+					pool.kill()
+
+					expect(-> pool.run reflex, pass).to.throwError /kill has been called/
+
+				it 'should raise an error if a bad timeout value is passed', ->
+					pool = bobbin.create()
+					expect(-> pool.kill(-1)).to.throwError /non\-negative/
+					expect(-> pool.kill(false)).to.throwError /non\-negative/
 
 	after ->
 		mockery.disable()

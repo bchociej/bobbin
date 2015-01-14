@@ -5,6 +5,10 @@ describe 'worker', ->
 
 	reflex = ((cb) -> cb()).toString()
 
+	slow_reflex = ((cb) ->
+		setTimeout cb, 10
+	).toString()
+
 	cluster_mock =
 		isMaster: false
 		isWorker: true
@@ -49,8 +53,10 @@ describe 'worker', ->
 		id = 'fizzbuzzwhatup'
 
 		worker(process_mock (msg) ->
-			expect(msg.id).to.eql id
-			done())
+			if msg.type is 'result'
+				expect(msg.contents.id).to.eql id
+				done()
+		)
 
 		handlers['message'] {
 			id: id
@@ -58,14 +64,35 @@ describe 'worker', ->
 			work: reflex
 		}
 
+	it 'should notify the master when its function queue is empty', (done) ->
+		result_count = 0
+		id = 'blah'
+
+		worker(process_mock (msg) ->
+			if msg.type is 'empty'
+				expect(result_count).to.eql 4
+				done()
+
+			if msg.type is 'result'
+				result_count++
+		)
+
+		for i in [1..4]
+			handlers['message'] {
+				id: id
+				data: []
+				work: slow_reflex
+			}
+
 	it 'should pass data in/out of work function correctly', (done) ->
 		id = 'foo'
 
 		data = ['foo', 'bar', {quux: {a: 1, b: null, c: false, d: true}}]
 
 		worker(process_mock (msg) ->
-			expect(msg.callback_params).to.eql [null, data.reverse()]
-			done()
+			if msg.type is 'result'
+				expect(msg.contents.callback_params).to.eql [null, data.reverse()]
+				done()
 		)
 
 		handlers['message'] {
