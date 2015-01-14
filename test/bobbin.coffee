@@ -10,8 +10,6 @@ pass = -> undefined
 reflex = (cb) -> cb()
 slow_reflex = (cb) -> setTimeout cb, 10
 
-describe 'tests', -> it 'should consider mocking worker instead of cluster.fork, where appropriate'
-
 describe 'bobbin', ->
 
 	cluster_mock =
@@ -256,8 +254,6 @@ describe 'bobbin', ->
 					}
 
 				it 'should prefer idle workers'
-				# might need to mock worker for this
-
 
 			describe '.kill()', ->
 
