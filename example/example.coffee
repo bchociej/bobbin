@@ -15,4 +15,6 @@ work = (i, cb) ->
 
 	cb null, i
 
-pool.run(i, work, (err, result) -> console.log(result)) for i in [1..20]
+log_result = (err, result) -> console.log(result)
+
+pool.run(i, work, log_result) for i in [1..20]
