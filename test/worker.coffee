@@ -141,6 +141,7 @@ describe 'worker', ->
 			id: id
 			data: data
 			work: ((data..., cb) ->
+				# IIFE side-steps coffeelint's prohibition on throwing strings
 				throw (do -> 'some stupid non-error')
 			).toString()
 		}
