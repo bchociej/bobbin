@@ -3,7 +3,18 @@ path = require 'path'
 uuid = require 'node-uuid'
 num_cpus = require('os').cpus().length
 
+WorkerError = (e) ->
+	this.message = e.message
+	this.filename = e.filename
+	this.lineNumber = e.lineNumber
+	this.name = e.name
+	this.stack = e.stack
+
+WorkerError.prototype = new Error
+
 module.exports =
+	WorkerError: WorkerError
+
 	create: (num_workers) ->
 		workers = []
 		worker_queue = []
@@ -24,6 +35,12 @@ module.exports =
 				switch msg.type
 					when 'result'
 						handlers[msg.contents.id] msg.contents.callback_params...
+
+					when 'exception'
+						if msg.contents.is_error
+							handlers[msg.contents.id] (new WorkerError msg.contents.error.parameters)
+						else
+							handlers[msg.contents.id] msg.contents.exception
 
 					when 'empty'
 						worker_queue = worker_queue.filter (x) -> x isnt num

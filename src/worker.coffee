@@ -4,6 +4,21 @@ boxed_eval = (s) ->
 	retval
 	### jshint ignore:end ###
 
+box_error = (e) ->
+	unless e instanceof Error
+		throw new TypeError 'e is not an Error'
+
+	{
+		type: e.constructor.name
+		parameters: {
+			name: e.name
+			message: e.message
+			filename: e.filename
+			lineNumber: e.lineNumber
+			stack: e.stack
+		}
+	}
+
 builtin_process = process
 
 run = (process = builtin_process) ->
@@ -28,12 +43,33 @@ run = (process = builtin_process) ->
 
 		inc()
 
-		work_fn msg.data..., (err, result) ->
-			process.send
-				type: 'result'
-				contents:
-					id: msg.id
-					callback_params: [err, result]
+		try
+			work_fn msg.data..., (err, result) ->
+				process.send
+					type: 'result'
+					contents:
+						id: msg.id
+						callback_params: [err, result]
+
+				dec()
+		catch e
+			if e instanceof Error
+				e = box_error e
+
+				process.send
+					type: 'exception'
+					contents:
+						id: msg.id
+						is_error: true
+						error: e
+
+			else
+				process.send
+					type: 'exception'
+					contents:
+						id: msg.id
+						is_error: false
+						exception: e
 
 			dec()
 

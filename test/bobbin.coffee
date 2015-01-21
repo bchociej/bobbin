@@ -253,6 +253,65 @@ describe 'bobbin', ->
 						}
 					}
 
+				it 'should apply a WorkerError to the callback when a worker throws an Error', (done) ->
+					handlers = {}
+					id = undefined
+					params = ['foo', 'bar', 'baz', {quux: true, ziv: {a: 1, b:2}}]
+
+					cluster_mock.fork = ->
+						send: (msg) ->
+							id = msg.id
+						on: (ev, handler) ->
+							handlers[ev] = handler
+
+					bobbin.create().run pass, (err, result) ->
+						expect(err).to.be.a bobbin.WorkerError
+						expect(err.message).to.be 'what up'
+						expect(err.name).to.be 'Error'
+						expect(result).to.be undefined
+						done()
+
+					handlers['message'] {
+						type: 'exception'
+						contents: {
+							id: id
+							is_error: true
+							error: {
+								type: 'Error'
+								parameters: {
+									name: 'Error'
+									message: 'what up'
+								}
+							}
+						}
+					}
+
+				it 'should apply a thrown non-Error exception to the callback just like an error', (done) ->
+					handlers = {}
+					id = undefined
+					params = ['foo', 'bar', 'baz', {quux: true, ziv: {a: 1, b:2}}]
+
+					cluster_mock.fork = ->
+						send: (msg) ->
+							id = msg.id
+						on: (ev, handler) ->
+							handlers[ev] = handler
+
+					bobbin.create().run pass, (err, result) ->
+						expect(err).not.to.be.an Error
+						expect(err).to.be 'bad thing'
+						expect(result).to.be undefined
+						done()
+
+					handlers['message'] {
+						type: 'exception'
+						contents: {
+							id: id
+							is_error: false
+							exception: 'bad thing'
+						}
+					}
+
 				it 'should prefer idle workers'
 
 			describe '.kill()', ->

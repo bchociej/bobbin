@@ -103,5 +103,47 @@ describe 'worker', ->
 			).toString()
 		}
 
+	it 'should pass work function errors to master', (done) ->
+		id = 'foo'
+
+		data = ['foo', 'bar', {quux: {a: 1, b: null, c: false, d: true}}]
+
+		worker(process_mock (msg) ->
+			if msg.type is 'exception'
+				expect(msg.contents.is_error).to.be true
+				expect(msg.contents.error.type).to.eql 'Error'
+				expect(msg.contents.error.parameters.name).to.eql 'Error'
+				expect(msg.contents.error.parameters.message).to.eql 'this is a great error'
+				done()
+		)
+
+		handlers['message'] {
+			id: id
+			data: data
+			work: ((data..., cb) ->
+				throw new Error 'this is a great error'
+			).toString()
+		}
+
+	it 'should pass work function non-error exceptions to master', (done) ->
+		id = 'foo'
+
+		data = ['foo', 'bar', {quux: {a: 1, b: null, c: false, d: true}}]
+
+		worker(process_mock (msg) ->
+			if msg.type is 'exception'
+				expect(msg.contents.is_error).to.be false
+				expect(msg.contents.exception).to.eql 'some stupid non-error'
+				done()
+		)
+
+		handlers['message'] {
+			id: id
+			data: data
+			work: ((data..., cb) ->
+				throw (do -> 'some stupid non-error')
+			).toString()
+		}
+
 	after ->
 		mockery.disable()
