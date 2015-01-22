@@ -1,11 +1,10 @@
 {
   "name": "bobbin",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "easily spool up thread-like worker processes",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register",
-    "watch-test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register -w",
+    "test": "node_modules/.bin/mocha --compilers coffee:coffee-script/register --check-leaks",
     "coffeelint": "node_modules/.bin/coffeelint src/ test/ example/",
     "coffee-jshint": "find src/ test/ example/ -type f -name '*.coffee' | xargs node_modules/.bin/coffee-jshint -o node,mocha"
   },

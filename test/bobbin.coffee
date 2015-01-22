@@ -312,7 +312,89 @@ describe 'bobbin', ->
 						}
 					}
 
-				it 'should prefer idle workers'
+				it 'should prefer idle workers', (done) ->
+					workers = []
+					count = 0
+
+					cluster_mock.fork = ->
+						handlers = {}
+						id = undefined
+
+						# extra handler and id accessors for twiddling with stuff later on
+						workers.push
+							send: (msg) ->
+								id = msg.id
+								count++
+
+							on: (ev, handler) ->
+								handlers[ev] = handler
+
+							handler: (ev) ->
+								handlers[ev]
+
+							id: -> id
+
+						workers[workers.length - 1]
+
+
+					# create 30 workers and give them each 2 jobs that will never finish
+					pool = bobbin.create(30)
+					expect(workers.length).to.be 30
+					pool.run(pass, pass) for i in [1..60]
+					expect(count).to.be 60
+
+
+
+					# fail if busy workers get work
+					busyfail = (i) ->
+						-> expect().fail "sent work to busy worker #{i} when there was an idle worker available!"
+
+					for i in [0...30]
+						workers[i].send = busyfail(i)
+
+
+
+					# emulate 'empty' message for worker 14
+					workers[14].handler('message')({
+						type: 'result'
+						contents:
+							id: workers[14].id()
+							callback_params: [null, 'foo']
+					}) for i in [1..2]
+					workers[14].handler('message')({type: 'empty'})
+
+					# once the #14 test passes, do it again with 22 and 6 for good measure
+					workers[14].send = ->
+						workers[22].handler('message')({
+							type: 'result'
+							contents:
+								id: workers[22].id()
+								callback_params: [null, 'foo']
+						}) for i in [1..2]
+						workers[22].handler('message')({type: 'empty'})
+
+						workers[14].send = busyfail(14)
+						workers[22].send = ->
+							workers[6].handler('message')({
+								type: 'result'
+								contents:
+									id: workers[6].id()
+									callback_params: [null, 'foo']
+							}) for i in [1..2]
+							workers[6].handler('message')({type: 'empty'})
+
+							workers[22].send = busyfail(22)
+							workers[6].send = ->
+								# if we got here without a busyfail going off, things worked correctly
+								done()
+
+							pool.run pass, pass
+
+						pool.run pass, pass
+
+					pool.run pass, pass
+
+
 
 			describe '.kill()', ->
 
