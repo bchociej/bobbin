@@ -1,3 +1,5 @@
+path = require 'path'
+
 boxed_eval = (s) ->
 	### jshint ignore:start ###
 	eval "var retval = #{s}"
@@ -20,6 +22,7 @@ box_error = (e) ->
 	}
 
 builtin_process = process
+real_require = require
 
 run = (process = builtin_process) ->
 	cluster = require 'cluster'
@@ -37,6 +40,11 @@ run = (process = builtin_process) ->
 
 	process.on 'message', (msg) ->
 		work_fn = boxed_eval msg.work
+
+		require = (what) ->
+			if msg.dirname? and what.indexOf path.sep > -1
+				real_require path.resolve(msg.dirname, what)
+			else real_require what
 
 		unless typeof work_fn is 'function'
 			throw new TypeError 'work_fn not a function'

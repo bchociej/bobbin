@@ -146,5 +146,11 @@ describe 'worker', ->
 			).toString()
 		}
 
+	it 'should cause work modules to be required from msg.dirname, when present'
+
+	it 'should not allow work modules to be required from worker.coffee\'s directory when msg.dirname is present'
+
+	it 'should throw an error when msg.dirname is not present and the work function\'s require argument is a relative path'
+
 	after ->
 		mockery.disable()

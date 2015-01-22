@@ -1,5 +1,6 @@
 cluster = require 'cluster'
 path = require 'path'
+fs = require 'fs'
 uuid = require 'node-uuid'
 num_cpus = require('os').cpus().length
 
@@ -64,39 +65,54 @@ module.exports =
 			worker_queue.push worker_queue.shift()
 			workers[worker_queue[worker_queue.length - 1]]
 
-		return {
-			run: (data..., work, callback) ->
-				if killing
-					throw new Error 'kill has been called, no new work accepted'
+		contextualized_pool = (dir) ->
+			unless typeof dir is 'string'
+				throw new TypeError 'dir must be a string'
 
-				unless typeof work is 'function'
-					throw new TypeError 'work parameter must be a function'
+			fs.stat dir, (err, stats) ->
+				throw err if err?
 
-				unless typeof callback is 'function'
-					throw new TypeError 'callback parameter must be a function'
+				unless stats.isDirectory()
+					throw new Error "not a directory: #{dir}"
 
-				id = uuid.v1()
-				handlers[id] = callback
+			return {
+				run: (data..., work, callback) ->
+					if killing
+						throw new Error 'kill has been called, no new work accepted'
 
-				w = get_worker()
+					unless typeof work is 'function'
+						throw new TypeError 'work parameter must be a function'
 
-				w.send
-					id: id
-					data: data
-					work: work.toString()
+					unless typeof callback is 'function'
+						throw new TypeError 'callback parameter must be a function'
 
-				empty[w.__num__] = false
+					id = uuid.v1()
+					handlers[id] = callback
 
-			kill: (timeout=0) ->
-				unless typeof timeout is 'number' and timeout >= 0
-					throw new TypeError 'kill timeout must be a non-negative number of milliseconds'
+					w = get_worker()
 
-				unless killing
-					killing = true
-					
-					for w in workers
-						if timeout is 0 or empty[w.__num__]
-							w.kill()
-						else
-							setTimeout w.kill, timeout
-		}
+					w.send
+						id: id
+						data: data
+						work: work.toString()
+						dirname: dir
+
+					empty[w.__num__] = false
+
+				kill: (timeout=0) ->
+					unless typeof timeout is 'number' and timeout >= 0
+						throw new TypeError 'kill timeout must be a non-negative number of milliseconds'
+
+					unless killing
+						killing = true
+						
+						for w in workers
+							if timeout is 0 or empty[w.__num__]
+								w.kill()
+							else
+								setTimeout w.kill, timeout
+
+				path: (dir) -> contextualized_pool(dir)
+			}
+
+		contextualized_pool(path.resolve(path.dirname(module.parent.filename)))

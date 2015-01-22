@@ -178,11 +178,12 @@ describe 'bobbin', ->
 
 			bobbin.create()
 
-		it 'should return a pool object (run, kill)', ->
+		it 'should return a pool object (run, kill, path)', ->
 			pool = bobbin.create()
 			expect(pool).to.be.an 'object'
 			expect(pool.run).to.be.a 'function'
 			expect(pool.kill).to.be.a 'function'
+			expect(pool.path).to.be.a 'function'
 
 		describe '[worker pool]', ->
 
@@ -394,6 +395,7 @@ describe 'bobbin', ->
 
 					pool.run pass, pass
 
+				it 'should pass module.parent.filename to worker'
 
 
 			describe '.kill()', ->
@@ -504,6 +506,19 @@ describe 'bobbin', ->
 					pool = bobbin.create()
 					expect(-> pool.kill(-1)).to.throwError /non\-negative/
 					expect(-> pool.kill(false)).to.throwError /non\-negative/
+
+
+			describe '.path()', ->
+
+				it 'should return a pool object (run, kill, path) when called with a valid directory'
+
+				it 'should throw an error when its argument is not a string'
+
+				it 'should throw an error when the directory argument is not accessible'
+
+				it 'should throw an error when the directory argument is not a directory'
+
+				it 'should cause the given directory name to be passed to workers'
 
 	after ->
 		mockery.disable()
