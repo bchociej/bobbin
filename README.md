@@ -10,7 +10,7 @@ var bobbin = require('bobbin');
 var pool = bobbin.create(4); // create 4 processes; defaults to os.cpus().length
 
 
-// to send some work (in this case concatenate two strings ```left``` and ```right```):
+// to send some work (in this case concatenate two strings `left' and `right'):
 
 var left = 'foo', right = 'bar';
 pool.run(
