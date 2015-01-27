@@ -1,6 +1,6 @@
 {
   "name": "bobbin",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "easily spool up thread-like worker processes",
   "main": "index.js",
   "scripts": {
