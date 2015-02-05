@@ -9,6 +9,8 @@ describe 'worker', ->
 		setTimeout cb, 10
 	).toString()
 
+	pass = -> undefined
+
 	cluster_mock =
 		isMaster: false
 		isWorker: true
@@ -141,7 +143,6 @@ describe 'worker', ->
 			id: id
 			data: data
 			work: ((data..., cb) ->
-				# IIFE side-steps coffeelint's prohibition on throwing strings
 				throw (do -> 'some stupid non-error')
 			).toString()
 		}

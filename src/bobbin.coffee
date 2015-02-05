@@ -4,6 +4,11 @@ fs = require 'fs'
 uuid = require 'node-uuid'
 num_cpus = require('os').cpus().length
 
+
+
+# Some custom Error types for clear debugging
+
+# Wraps an error from a worker
 WorkerError = (e) ->
 	this.message = e.message
 	this.filename = e.filename
@@ -11,26 +16,65 @@ WorkerError = (e) ->
 	this.name = e.name
 	this.stack = e.stack
 
-WorkerError.prototype = new Error
+# Signifies that the error was in Bobbin code, not the work function
+BobbinError = (message) ->
+	this.message = message
+
+WorkerError.prototype = BobbinError.prototype = new Error
 
 module.exports =
 	WorkerError: WorkerError
 
-	create: (num_workers) ->
+	BobbinError: BobbinError
+
+	create: (opts, create_cb) ->
 		workers = []
 		worker_queue = []
 		empty = []
 		handlers = {}
 		killing = false
 
-		unless cluster.isMaster is true
-			throw new Error 'needs to be cluster master'
 
-		unless typeof num_workers is 'number' and num_workers >= 1
+
+		# If only one arg, callback is first position.
+		unless create_cb?
+			create_cb = opts
+
+
+
+		# Would like to remove this restriction. I think it's safe to do so.
+		unless cluster.isMaster is true
+			return create_cb new Error 'needs to be cluster master'
+
+
+
+		# Process options. If string, it's a path. If number, num_workers.
+		num_workers = work_dir = undefined
+
+		if typeof opts is 'number'
+			num_workers = opts
+		else if typeof opts is 'string'
+			work_dir = opts
+		else if typeof opts is 'object' and not Array.isArray(opts)
+			{num_workers, work_dir} = opts
+
+		unless typeof num_workers is 'number'
 			num_workers = num_cpus
 
+		if num_workers > 1024 or num_workers < 1 or isNaN(num_workers)
+			return create_cb new Error "num_workers is nonsensical (#{num_workers})"
+
+		unless typeof work_dir is 'string'
+			work_dir = path.resolve(path.dirname(module.parent.filename))
+
+
+
+		# We aren't forking this script, use the worker script!
 		cluster.setupMaster exec: path.join(__dirname, 'worker.coffee')
 
+
+
+		# Unified handling of messages that come back from worker processes
 		worker_msg_handler = (num) ->
 			(msg) ->
 				switch msg.type
@@ -52,6 +96,8 @@ module.exports =
 							workers[num].kill()
 
 
+
+		# Start workers and organize the queue
 		for i in [0...num_workers]
 			w = cluster.fork()
 			w.__num__ = i
@@ -65,54 +111,81 @@ module.exports =
 			worker_queue.push worker_queue.shift()
 			workers[worker_queue[worker_queue.length - 1]]
 
-		contextualized_pool = (dir) ->
+
+
+		# Builds a pool object, with a specified working directory
+		contextualized_pool = (dir, con_pool_cb) ->
 			unless typeof dir is 'string'
-				throw new TypeError 'dir must be a string'
+				return con_pool_cb new TypeError 'dir must be a string'
 
 			fs.stat dir, (err, stats) ->
-				throw err if err?
+				if err?
+					return con_pool_cb err
 
 				unless stats.isDirectory()
-					throw new Error "not a directory: #{dir}"
+					return con_pool_cb new Error "not a directory: #{dir}"
 
-			return {
-				run: (data..., work, callback) ->
-					if killing
-						throw new Error 'kill has been called, no new work accepted'
+				con_pool_cb null, {
+					run: (data..., work, run_cb) ->
+						unless typeof run_cb is 'function'
+							run_cb = -> undefined
 
-					unless typeof work is 'function'
-						throw new TypeError 'work parameter must be a function'
+						if killing
+							return run_cb new BobbinError 'kill has been called, no new work accepted'
 
-					unless typeof callback is 'function'
-						throw new TypeError 'callback parameter must be a function'
+						unless typeof work is 'function'
+							run_cb new BobbinError 'work must be a function'
 
-					id = uuid.v1()
-					handlers[id] = callback
+						id = uuid.v1()
+						handlers[id] = run_cb
 
-					w = get_worker()
+						w = get_worker()
 
-					w.send
-						id: id
-						data: data
-						work: work.toString()
-						dirname: dir
+						w.send
+							id: id
+							data: data
+							work: work.toString()
+							dirname: dir
 
-					empty[w.__num__] = false
+						empty[w.__num__] = false
 
-				kill: (timeout=0) ->
-					unless typeof timeout is 'number' and timeout >= 0
-						throw new TypeError 'kill timeout must be a non-negative number of milliseconds'
+					kill: (timeout=0, kill_cb) ->
+						unless kill_cb?
+							kill_cb = timeout
+							timeout = 0
 
-					unless killing
-						killing = true
-						
-						for w in workers
-							if timeout is 0 or empty[w.__num__]
-								w.kill()
+						unless typeof kill_cb is 'function'
+							kill_cb = -> undefined
+
+						unless typeof timeout is 'number' and timeout >= 0
+							return kill_cb new BobbinError 'kill timeout must be a non-negative number of milliseconds'
+
+						unless killing
+							killing = true
+							
+							if timeout is 0
+								w.kill() for w in workers
+								return kill_cb()
 							else
-								setTimeout w.kill, timeout
+								_killed = 0
+								_kill = ->
+									if ++_killed is workers.length
+										kill_cb()
 
-				path: (dir) -> contextualized_pool(dir)
-			}
+								workers.forEach (w) ->
+									if empty[w.__num__]
+										w.kill()
+										_kill()
+									else
+										setTimeout ->
+											w.kill()
+											_kill()
+										, timeout
 
-		contextualized_pool(path.resolve(path.dirname(module.parent.filename)))
+					path: (dir, path_cb) -> contextualized_pool(dir, path_cb)
+				}
+
+
+
+		# Finally, create a pool and call back
+		return contextualized_pool work_dir, create_cb
