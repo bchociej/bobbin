@@ -1,0 +1,1 @@
+module.exports = 'This is the pathname injection example string!'

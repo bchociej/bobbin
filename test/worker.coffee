@@ -9,6 +9,8 @@ describe 'worker', ->
 		setTimeout cb, 10
 	).toString()
 
+	pass = -> undefined
+
 	cluster_mock =
 		isMaster: false
 		isWorker: true
@@ -141,10 +143,47 @@ describe 'worker', ->
 			id: id
 			data: data
 			work: ((data..., cb) ->
-				# IIFE side-steps coffeelint's prohibition on throwing strings
 				throw (do -> 'some stupid non-error')
 			).toString()
 		}
+
+	it 'should cause work modules to be required from msg.dirname, when present', (done) ->
+		p = process_mock pass
+
+		r = (reqstr) ->
+			expect(reqstr).to.match /excellent\/dirname\/whatup\/dude$/
+			done()
+
+		worker(p, r)
+
+		handlers['message'] {
+			id: 'bar'
+			data: [1,2,3]
+			dirname: 'excellent/dirname/'
+			work: ((data..., cb) ->
+				require('whatup/dude')
+			).toString()
+		}
+
+	it 'should fail when msg.dirname is not present and work function\'s require argument is a rel. path', (done) ->
+		p = process_mock (msg) ->
+			if msg.type is 'exception'
+				expect(msg.contents.error.parameters.message).to.match /dirname/i
+				expect(msg.contents.error.parameters.message).to.match /relative/i
+				done()
+
+		r = (reqstr) -> undefined
+
+		worker(p)
+
+		handlers['message'] {
+			id: 'bar'
+			data: [1,2,3]
+			work: ((data..., cb) ->
+				require('whatup/dude')
+			).toString()
+		}
+
 
 	after ->
 		mockery.disable()
