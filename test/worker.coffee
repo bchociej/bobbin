@@ -165,7 +165,7 @@ describe 'worker', ->
 			).toString()
 		}
 
-	it 'should fail when msg.dirname is not present and the work function\'s require argument is a relative path', (done) ->
+	it 'should fail when msg.dirname is not present and work function\'s require argument is a rel. path', (done) ->
 		p = process_mock (msg) ->
 			if msg.type is 'exception'
 				expect(msg.contents.error.parameters.message).to.match /dirname/i
