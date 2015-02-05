@@ -7,21 +7,24 @@ easily spool up thread-like worker processes in node with bobbin
 // to create a pool of workers:
 
 var bobbin = require('bobbin');
-var pool = bobbin.create(4); // create 4 processes; defaults to os.cpus().length
 
+// create 4 processes; defaults to os.cpus().length
+bobbin.create(4, function(err, pool) {
 
-// to send some work (in this case concatenate two strings `left' and `right'):
+	// to send some work (in this case concatenate two strings `left' and `right'):
 
-var left = 'foo', right = 'bar';
-pool.run(
-	left, right, // you have to explicitly pass variables
-	function remoteWorkFunction(left, right, callback) {
-    	callback(left + right);
-    },
-    function localCallback(result) {
-    	assert(result === 'foobar');
-    }
-);
+	var left = 'foo', right = 'bar';
+	pool.run(
+		left, right, // you have to explicitly pass variables
+		function remoteWorkFunction(left, right, callback) {
+	    	callback(left + right);
+	    },
+	    function localCallback(result) {
+	    	assert(result === 'foobar');
+	    }
+	);
+
+});
 ```
 
 for clarity, the signature of `pool.run` is:
