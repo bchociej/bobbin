@@ -1,8 +1,4 @@
-boxed_eval = (s) ->
-	### jshint ignore:start ###
-	eval "var retval = #{s}"
-	retval
-	### jshint ignore:end ###
+path = require 'path'
 
 box_error = (e) ->
 	unless e instanceof Error
@@ -20,8 +16,9 @@ box_error = (e) ->
 	}
 
 builtin_process = process
+builtin_require = require
 
-run = (process = builtin_process) ->
+run = (process = builtin_process, real_require = builtin_require) ->
 	cluster = require 'cluster'
 
 	unless cluster.isWorker
@@ -36,6 +33,20 @@ run = (process = builtin_process) ->
 			process.send {type: 'empty'}
 
 	process.on 'message', (msg) ->
+		require = (what) ->
+			if msg.dirname? and what.indexOf path.sep > -1
+				return real_require path.resolve(msg.dirname, what)
+			else if what.indexOf path.sep > -1
+				throw new Error 'relative path specified but msg.dirname not present'
+			else
+				return real_require what
+
+		boxed_eval = (s) ->
+			### jshint ignore:start ###
+			eval "var retval = #{s}"
+			return retval
+			### jshint ignore:end ###
+
 		work_fn = boxed_eval msg.work
 
 		unless typeof work_fn is 'function'
