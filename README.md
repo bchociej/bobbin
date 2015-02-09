@@ -40,3 +40,5 @@ stuff to keep in mind:
 3. your local callback gets called with whatever your work function calls back with.
 4. to `create()` a pool, you have to be the `cluster` master, i.e. `cluster.isMaster`
 
+Apache License 2.0, see LICENSE for info.
+
