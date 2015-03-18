@@ -34,9 +34,9 @@ run = (process = builtin_process, real_require = builtin_require) ->
 
 	process.on 'message', (msg) ->
 		require = (what) ->
-			if msg.dirname? and what.indexOf path.sep > -1
+			if msg.dirname? and what.indexOf(path.sep) > -1
 				return real_require path.resolve(msg.dirname, what)
-			else if what.indexOf path.sep > -1
+			else if what.indexOf(path.sep) > -1
 				throw new Error 'relative path specified but msg.dirname not present'
 			else
 				return real_require what
