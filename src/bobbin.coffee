@@ -14,7 +14,7 @@ WorkerError = (e) ->
 	this.filename = e.filename
 	this.lineNumber = e.lineNumber
 	this.name = e.name
-	this.stack = e.stack
+	this.workerStack = e.stack
 
 # Signifies that the error was in Bobbin code, not the work function
 BobbinError = (message) ->
