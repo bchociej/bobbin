@@ -14,7 +14,7 @@ WorkerError = (e) ->
 	this.filename = e.filename
 	this.lineNumber = e.lineNumber
 	this.name = e.name
-	this.stack = e.stack
+	this.workerStack = e.stack
 
 # Signifies that the error was in Bobbin code, not the work function
 BobbinError = (message) ->
@@ -56,7 +56,7 @@ module.exports =
 		else if typeof opts is 'string'
 			work_dir = opts
 		else if typeof opts is 'object' and not Array.isArray(opts)
-			{num_workers, work_dir} = opts
+			{num_workers, work_dir, cache_functions} = opts
 
 		unless typeof num_workers is 'number'
 			num_workers = num_cpus
@@ -65,12 +65,16 @@ module.exports =
 			return create_cb new Error "num_workers is nonsensical (#{num_workers})"
 
 		unless typeof work_dir is 'string'
-			work_dir = path.resolve(path.dirname(module.parent.filename))
+			work_dir = path.resolve('.')
+
+		cache_functions ?= true
 
 
 
 		# We aren't forking this script, use the worker script!
-		cluster.setupMaster exec: path.join(__dirname, 'worker.coffee')
+		cluster.setupMaster {
+			exec: path.join(__dirname, 'worker.coffee')
+		}
 
 
 
@@ -145,6 +149,7 @@ module.exports =
 							id: id
 							data: data
 							work: work.toString()
+							cache_function: if cache_functions then true else false
 							dirname: dir
 
 						empty[w.__num__] = false
@@ -162,7 +167,7 @@ module.exports =
 
 						unless killing
 							killing = true
-							
+
 							if timeout is 0
 								w.kill() for w in workers
 								return kill_cb()
