@@ -11,7 +11,7 @@ box_error = (e) ->
 			message: e.message
 			filename: e.filename
 			lineNumber: e.lineNumber
-			stack: e.stack
+			stack: e.stack?.toString()
 		}
 	}
 
