@@ -16,9 +16,9 @@ describe 'bobbin', ->
 
 	fresh_cluster_mock = ->
 		o = {}
-		
+
 		o.isMaster = true
-		
+
 		o.setupMaster = (opts) ->
 			expect(fs.existsSync opts.exec).to.be.ok()
 
@@ -32,7 +32,7 @@ describe 'bobbin', ->
 
 	before ->
 		mockery.enable useCleanCache: true
-		
+
 		mockery.registerAllowable '../src/bobbin.coffee', true
 		mockery.registerAllowables ['os', 'node-uuid', 'path', 'fs']
 
@@ -353,14 +353,14 @@ describe 'bobbin', ->
 
 							pool.run pass, pass
 
-				it 'should pass parent module dirname to worker', (done) ->
+				it 'should pass workdir to worker', (done) ->
 					handlers = {}
 					id = undefined
 
 					cluster_mock.fork = ->
 						send: (msg) ->
 							id = msg.id
-							expect(msg.dirname).to.be path.dirname(module.filename)
+							expect(msg.dirname).to.be path.resolve('.')
 							done()
 						on: (ev, handler) ->
 							handlers[ev] = handler
@@ -441,7 +441,7 @@ describe 'bobbin', ->
 							expect(++work_done_count).to.be.below 21
 
 						pool.run((-> 'dummy function -- this test ignores this function'), inc_done) for i in [1..20]
-						
+
 						pool.kill 100, (err) ->
 							expect(work_done_count).to.be 20
 							expect(killed_count).to.be 10
@@ -486,7 +486,7 @@ describe 'bobbin', ->
 								expect(++work_done_count).to.be 0
 
 						pool.run((-> 'dummy function -- this test ignores this function'), work_done) for i in [1..20]
-						
+
 						process.nextTick ->
 							pool.kill 1, (err) ->
 								expect(work_done_count).to.be 0
@@ -517,7 +517,7 @@ describe 'bobbin', ->
 						pool.kill -1, (err) ->
 							expect(err).to.be.a bobbin.BobbinError
 							expect(err.message).to.match /non\-negative/
-						
+
 							pool.kill false, (err) ->
 								expect(err).to.be.a bobbin.BobbinError
 								expect(err.message).to.match /non\-negative number/
@@ -571,7 +571,7 @@ describe 'bobbin', ->
 							expect(err.message).to.match /ENOENT/
 							expect(pool).to.be undefined
 							done()
-					
+
 
 				it 'should throw an error when the directory argument is not a directory', (done) ->
 					cluster_mock.fork = ->
@@ -608,7 +608,7 @@ describe 'bobbin', ->
 							expect(err).to.eql null
 							expect(pool).to.be.an 'object'
 
-						pool.run pass, pass
+							pool.run pass, pass
 
 	after ->
 		mockery.disable()

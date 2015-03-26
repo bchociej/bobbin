@@ -18,6 +18,8 @@ box_error = (e) ->
 builtin_process = process
 builtin_require = require
 
+function_cache = {}
+
 run = (process = builtin_process, real_require = builtin_require) ->
 	cluster = require 'cluster'
 
@@ -47,7 +49,13 @@ run = (process = builtin_process, real_require = builtin_require) ->
 			return retval
 			### jshint ignore:end ###
 
-		work_fn = boxed_eval msg.work
+		if msg.cache_function
+			unless function_cache[msg.work]?
+				function_cache[msg.work] = boxed_eval msg.work
+
+			work_fn = function_cache[msg.work]
+		else
+			work_fn = boxed_eval msg.work
 
 		unless typeof work_fn is 'function'
 			throw new TypeError 'work_fn not a function'
