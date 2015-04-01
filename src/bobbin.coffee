@@ -188,6 +188,8 @@ module.exports =
 										, timeout
 
 					path: (dir, path_cb) -> contextualized_pool(dir, path_cb)
+
+					getSize: -> workers.length
 				}
 
 
